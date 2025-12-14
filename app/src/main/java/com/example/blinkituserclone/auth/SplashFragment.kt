@@ -50,6 +50,7 @@ class SplashFragment : Fragment() {
             }
         }, 3000)
 
+        // Test Commit
 
         return binding.root
     }
