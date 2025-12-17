@@ -64,6 +64,8 @@ class SplashFragment : Fragment() {
 
         // this is 8th comment into working branch
 
+        // this is comment from clone project
+
         return binding.root
     }
 
