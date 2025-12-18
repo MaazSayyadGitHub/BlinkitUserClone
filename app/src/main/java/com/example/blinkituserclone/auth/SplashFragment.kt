@@ -50,23 +50,7 @@ class SplashFragment : Fragment() {
             }
         }, 3000)
 
-        // Test Commit
 
-        // this commit is in working branch and
-
-        // this is 3rd comment into working branch
-
-        // this is 4th comment into working branch
-
-        // this is 5th comment into working branch
-
-        // this is 7th comment into working branch
-
-        // this is 8th comment into working branch
-
-        // this is comment from clone project
-
-        // this is to check pull changes into original project
 
         return binding.root
     }
