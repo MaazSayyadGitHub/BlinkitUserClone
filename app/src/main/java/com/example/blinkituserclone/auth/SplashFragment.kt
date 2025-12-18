@@ -50,7 +50,7 @@ class SplashFragment : Fragment() {
             }
         }, 3000)
 
-
+        // this changes should visible into master via pull
 
         return binding.root
     }
