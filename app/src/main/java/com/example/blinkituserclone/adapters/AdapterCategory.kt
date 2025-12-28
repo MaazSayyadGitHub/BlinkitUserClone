@@ -3,11 +3,12 @@ package com.example.blinkituserclone.adapters
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.example.blinkituserclone.R
 import com.example.blinkituserclone.databinding.ItemViewProductCategoryBinding
 import com.example.blinkituserclone.models.Category
 
-class AdapterCategory(val listOfCategory: ArrayList<Category>) :
+class AdapterCategory(
+    private val listOfCategory: ArrayList<Category>,
+    val onCategoryIconClicked: (Category) -> Unit) :
     RecyclerView.Adapter<AdapterCategory.CategoryViewModel>() {
 
 
@@ -34,5 +35,9 @@ class AdapterCategory(val listOfCategory: ArrayList<Category>) :
 
         holder.binding.ivCategory.setImageResource(list.image)
         holder.binding.titleCategory.text = list.title
+
+        holder.itemView.setOnClickListener {
+            onCategoryIconClicked(list)
+        }
     }
 }

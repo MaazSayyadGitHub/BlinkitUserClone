@@ -1,6 +1,7 @@
 package com.example.blinkituserclone.viewmodels
 
 import androidx.lifecycle.ViewModel
+import com.example.blinkituserclone.models.Category
 import com.example.blinkituserclone.models.Product
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -9,6 +10,7 @@ import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import java.util.EventListener
 
 class UserViewModel : ViewModel() {
 
@@ -30,12 +32,41 @@ class UserViewModel : ViewModel() {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                TODO("Not yet implemented")
+
             }
         }
 
         db.addValueEventListener(eventListener)
         awaitClose { db.removeEventListener(eventListener) } // as done event then close/remove it
     }
+
+    // categoryName passing
+    fun getCategoryProduct(category: String) : Flow<List<Product>> = callbackFlow {
+        val db = FirebaseDatabase.getInstance().getReference("Admin")
+            .child("ProductCategory/${category}") // path - Admin -> ProductCategory -> CategoryName -> fetch all
+
+        val eventListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val products = ArrayList<Product>()
+
+                for (product in snapshot.children){
+                    val prod = product.getValue(Product::class.java)
+                    products.add(prod!!)
+                }
+
+                trySend(products)
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+
+            }
+
+        }
+
+        db.addValueEventListener(eventListener)
+        awaitClose { db.removeEventListener(eventListener) } // as eventListener added into db then close or remove eventListener
+
+    }
+
 
 }

@@ -1,4 +1,4 @@
-package com.example.blinkituserclone
+package com.example.blinkituserclone.fragments
 
 import android.os.Bundle
 import androidx.fragment.app.Fragment
@@ -9,6 +9,7 @@ import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import com.example.blinkituserclone.R
 import com.example.blinkituserclone.adapters.AdapterProduct
 import com.example.blinkituserclone.databinding.FragmentSearchBinding
 import com.example.blinkituserclone.viewmodels.UserViewModel
