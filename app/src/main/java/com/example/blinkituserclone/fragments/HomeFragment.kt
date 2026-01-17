@@ -2,6 +2,7 @@ package com.example.blinkituserclone.fragments
 
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -16,6 +17,7 @@ import com.example.blinkituserclone.databinding.FragmentHomeBinding
 import com.example.blinkituserclone.models.Category
 import com.example.blinkituserclone.viewmodels.UserViewModel
 import kotlinx.coroutines.launch
+import kotlin.math.log
 
 
 class HomeFragment : Fragment() {
@@ -34,7 +36,18 @@ class HomeFragment : Fragment() {
         setRecyclerView()
         navigateToSearchFragment()
 
+        getAllProductsFromRoomDB()
+
         return binding.root
+    }
+
+    private fun getAllProductsFromRoomDB() {
+        viewModel.getAllCartProducts().observe(viewLifecycleOwner) {
+            for (i in it) {
+                Log.d("AllProductsFromRoomDB", "ProductTitle"+ i.productTitle.toString())
+                Log.d("AllProductsFromRoomDB", "ProductCount" +i.productCount.toString())
+            }
+        }
     }
 
     private fun navigateToSearchFragment() {
