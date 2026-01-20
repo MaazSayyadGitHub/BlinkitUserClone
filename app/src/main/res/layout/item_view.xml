@@ -85,7 +85,7 @@
 
 
                     <TextView
-                        android:id="@+id/tvEdit"
+                        android:id="@+id/tvAdd"
                         android:layout_width="78.00dp"
                         android:layout_height="wrap_content"
                         android:text="Add"

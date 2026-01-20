@@ -81,7 +81,7 @@ class OTPFragment : Fragment() {
             viewModel.isSignedInSuccessfully
                 .drop(1) // it will not check first default value which is false set
                 // (till verify otp and return true it is giving us false which is set initial,
-                // so that why both if and else are running)
+                // so that's why both if and else are running) so we have dropped first response
                 .collect{
                 if (it){
                     Utils.hideDialog()

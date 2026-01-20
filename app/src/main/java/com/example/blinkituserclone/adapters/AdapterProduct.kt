@@ -1,7 +1,7 @@
 package com.example.blinkituserclone.adapters
 
-import android.annotation.SuppressLint
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import android.widget.Filter
 import android.widget.Filterable
@@ -11,10 +11,13 @@ import androidx.recyclerview.widget.RecyclerView
 import com.denzcoskun.imageslider.models.SlideModel
 import com.example.blinkituserclone.databinding.ItemViewBinding
 import com.example.blinkituserclone.models.Product
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 
-class AdapterProduct() : RecyclerView.Adapter<AdapterProduct.ViewHolder>() , Filterable {
+class AdapterProduct(
+    val onAddButtonClicked: (Product, ItemViewBinding) -> Unit,
+    val onIncrementButtonClicked: (Product, ItemViewBinding) -> Unit,
+    val onDecrementButtonClicked: (Product, ItemViewBinding) -> Unit
+) :
+    RecyclerView.Adapter<AdapterProduct.ViewHolder>() , Filterable {
 
 
     class ViewHolder(val binding: ItemViewBinding) : RecyclerView.ViewHolder(binding.root)
@@ -58,14 +61,40 @@ class AdapterProduct() : RecyclerView.Adapter<AdapterProduct.ViewHolder>() , Fil
             val imageList = ArrayList<SlideModel>()
             val productImages = product.productImageUris
 
-            for (i in 0 until  productImages?.size!!){
-                imageList.add(SlideModel(productImages[i]))
+            productImages?.let { list ->
+                for (url in list) {
+                    imageList.add(SlideModel(url))
+                }
             }
+
+//            for (i in 0 until  productImages?.size){
+//                imageList.add(SlideModel(productImages?.get(i)))
+//            }
 
             ivImageSlider.setImageList(imageList)
             tvProductTitle.text = product.productTitle
             tvProductQuantity.text = "${product.productQuantity}${product.productUnit}"
             tvProductPrice.text = "₹${product.productPrice}" // ₹ for symbol use control + alt + 4
+
+            if (product.itemCount!! > 0){
+                tvProductCount.text = product.itemCount.toString()
+                tvAdd.visibility = View.GONE
+                llProductCount.visibility = View.VISIBLE
+            }
+
+            // by this click listener we will know that which items button is clicked
+            // and we will send that items (product, and all binding views)
+            tvAdd.setOnClickListener {
+                onAddButtonClicked(product, this) // passing current product & whole itemView
+            }
+
+            tvIncrementCount.setOnClickListener{
+                onIncrementButtonClicked(product, this)
+            }
+
+            tvDecrementCount.setOnClickListener {
+                onDecrementButtonClicked(product, this)
+            }
         }
 
         // here we are giving this fun a product for each position
@@ -80,7 +109,7 @@ class AdapterProduct() : RecyclerView.Adapter<AdapterProduct.ViewHolder>() , Fil
     override fun getFilter(): Filter {
         return object : Filter() {
             override fun performFiltering(charSequence : CharSequence?): FilterResults {
-                val query = charSequence.toString().toLowerCase() ?: ""
+                val query = charSequence.toString().lowercase() ?: ""
 
                 // this result variable hold filter list
                 filteredList = if (query.isEmpty()){

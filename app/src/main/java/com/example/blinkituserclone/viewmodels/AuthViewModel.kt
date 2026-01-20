@@ -70,6 +70,12 @@ class AuthViewModel : ViewModel() {
         Utils.getFirebaseAuthInstance().signInWithCredential(credential)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
+
+                    val firebaseUser = task.result?.user
+                    val uid = firebaseUser?.uid ?: return@addOnCompleteListener
+
+                    user.uid = uid   // set UID to your user object
+
                     // if success then we will add user details to firebase DB
                     FirebaseDatabase.getInstance().getReference("All Users")
                         .child("Users")
