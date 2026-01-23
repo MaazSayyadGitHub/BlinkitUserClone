@@ -2,6 +2,9 @@ package com.example.blinkituserclone
 
 object Constant {
 
+
+    const val TEST_API_KEY = "rzp_test_S6WuKRQWe1tIuu"
+
     val allProductsCategory = arrayOf(
         "Vegetables & Fruits",
         "Dairy & Breakfast",
