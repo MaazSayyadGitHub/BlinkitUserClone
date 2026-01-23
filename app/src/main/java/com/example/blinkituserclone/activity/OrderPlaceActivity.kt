@@ -1,15 +1,19 @@
 package com.example.blinkituserclone.activity
 
+import android.app.Activity
 import android.content.Intent
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
+import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.example.blinkituserclone.Constant
 import com.example.blinkituserclone.R
 import com.example.blinkituserclone.Utils
 import com.example.blinkituserclone.adapters.AdapterCartProducts
@@ -17,10 +21,15 @@ import com.example.blinkituserclone.databinding.ActivityOrderPlaceBinding
 import com.example.blinkituserclone.databinding.AddressLayoutBinding
 import com.example.blinkituserclone.models.Users
 import com.example.blinkituserclone.viewmodels.UserViewModel
+import com.razorpay.Checkout
+import com.razorpay.PaymentData
+import com.razorpay.PaymentResultWithDataListener
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.json.JSONObject
+import java.nio.charset.Charset
 
-class OrderPlaceActivity : AppCompatActivity() {
+class OrderPlaceActivity : AppCompatActivity() , PaymentResultWithDataListener {
 
     private lateinit var binding : ActivityOrderPlaceBinding
     private val viewModel: UserViewModel by viewModels()
@@ -37,12 +46,69 @@ class OrderPlaceActivity : AppCompatActivity() {
 
         onOrderPlaceClicked()
 
+        // razorpay integration
+        Checkout.preload(applicationContext)
+        val checkout = Checkout()
+        checkout.setKeyID(Constant.TEST_API_KEY)
+
     }
+
+
+    private fun initRazorpayPayment() { //  will Open Checkout Screen of Razorpay
+
+        /*
+        *  You need to pass the current activity to let Razorpay create CheckoutActivity
+        * */
+        val activity: Activity = this
+        val co = Checkout()
+
+        try {
+            val options = JSONObject()
+            options.put("name","BlinkItClone")
+            options.put("description","Food App")
+            //You can omit the image option to fetch the image from the Dashboard
+            options.put("image","http://example.com/image/rzp.jpg")
+            options.put("theme.color", Color.YELLOW);
+            options.put("currency","INR");
+//            options.put("order_id", "order_DBJOWzybf0sJbb"); // optional
+            options.put("amount","5000")//pass amount in currency subunits - 50rs
+
+            // user can retry
+            val retryObj = JSONObject();
+            retryObj.put("enabled", true);
+            retryObj.put("max_count", 4); // how much time can retry
+            options.put("retry", retryObj);
+
+            // contact
+            val prefill = JSONObject()
+            prefill.put("email","maazsayyad2206@gmail.com")
+            prefill.put("contact","+919130304812")
+            options.put("prefill",prefill)
+
+            co.open(activity,options)
+
+        }catch (e: Exception){
+            Toast.makeText(activity,"Error in payment: "+ e.message,Toast.LENGTH_LONG).show()
+            e.printStackTrace()
+        }
+    }
+
+    // Payment success
+    override fun onPaymentSuccess(paymentId: String?, p1: PaymentData?) {
+        Toast.makeText(this@OrderPlaceActivity, "Payment Success", Toast.LENGTH_LONG).show()
+    }
+
+    // payment fail
+    override fun onPaymentError(p0: Int, p1: String?, p2: PaymentData?) {
+        Toast.makeText(this@OrderPlaceActivity, "Payment Failed \n Error : ${p1.toString()}", Toast.LENGTH_LONG).show()
+    }
+
 
     private fun onOrderPlaceClicked() {
         binding.btnOrderNext.setOnClickListener {
             viewModel.getAddressStatusFromSharedPref().observe(this) {// true / false
                 if (it) { // true - address already entered, now goto payment
+                    initRazorpayPayment()
 
                 } else { // false - need to pass address
 
@@ -56,6 +122,7 @@ class OrderPlaceActivity : AppCompatActivity() {
 
                     addressLayoutBinding.btnAdd.setOnClickListener {
                         saveAddress(addressDialog, addressLayoutBinding)
+                        initRazorpayPayment() // goto payment screen
                     }
                 }
             }

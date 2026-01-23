@@ -95,4 +95,10 @@ dependencies {
     // Use the KSP annotation processor for Kotlin projects
     kapt("com.github.bumptech.glide:compiler:4.16.0")
 
+//    // phonepe PG
+//    implementation("phonepe.intentsdk.android.release:IntentSDK:2.3.0")
+
+    // razorpay PG
+    implementation("com.razorpay:checkout:1.6.40")
+
 }
