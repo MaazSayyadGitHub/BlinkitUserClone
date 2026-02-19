@@ -28,4 +28,6 @@ interface Dao {
     @Query("delete from CartProducts where productId = :productId")
     suspend fun deleteCartProduct(productId : String)
 
+    @Query("delete from CartProducts")
+    fun deleteAllCartProducts()
 }

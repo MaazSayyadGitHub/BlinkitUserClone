@@ -13,12 +13,15 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.example.blinkituserclone.CartListener
 import com.example.blinkituserclone.Constant
 import com.example.blinkituserclone.R
 import com.example.blinkituserclone.Utils
 import com.example.blinkituserclone.adapters.AdapterCartProducts
 import com.example.blinkituserclone.databinding.ActivityOrderPlaceBinding
 import com.example.blinkituserclone.databinding.AddressLayoutBinding
+import com.example.blinkituserclone.models.Orders
+import com.example.blinkituserclone.models.Product
 import com.example.blinkituserclone.models.Users
 import com.example.blinkituserclone.viewmodels.UserViewModel
 import com.razorpay.Checkout
@@ -34,6 +37,8 @@ class OrderPlaceActivity : AppCompatActivity() , PaymentResultWithDataListener {
     private lateinit var binding : ActivityOrderPlaceBinding
     private val viewModel: UserViewModel by viewModels()
     private lateinit var adapterCartProducts : AdapterCartProducts
+    val cartListener : CartListener ? = null
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -96,6 +101,18 @@ class OrderPlaceActivity : AppCompatActivity() , PaymentResultWithDataListener {
     // Payment success
     override fun onPaymentSuccess(paymentId: String?, p1: PaymentData?) {
         Toast.makeText(this@OrderPlaceActivity, "Payment Success", Toast.LENGTH_LONG).show()
+
+        // saveOrder (save products/ delete products from SharedPref/RoomDB )
+        saveOrder()
+        //delete all cartProducts from room DB
+        viewModel.deleteAllCartProducts()
+
+        // remove from SharedPref to no cart layout will display
+        viewModel.savingCartItemIntoSharedPref(0)
+        cartListener?.hideCartLayout()
+
+        // reset item count to firebase
+
     }
 
     // payment fail
@@ -103,6 +120,41 @@ class OrderPlaceActivity : AppCompatActivity() , PaymentResultWithDataListener {
         Toast.makeText(this@OrderPlaceActivity, "Payment Failed \n Error : ${p1.toString()}", Toast.LENGTH_LONG).show()
     }
 
+
+    private fun saveOrder() {
+        // get all cartProducts from Room Db for order
+        viewModel.getAllCartProducts().observe(this) { cartProductsList ->
+
+            if(cartProductsList.isNotEmpty()){
+                // get address detail from firebase
+                viewModel.getUserAddressFromFirebase { address ->
+
+                    // save all order details
+                    val order = Orders(
+                        orderId = Utils.getRandomUUID(),
+                        orderList = cartProductsList,
+                        userAddress = address,
+                        orderStatus = 0,
+                        orderDate = Utils.getCurrentDate(),
+                        orderingUserId = Utils.getUserID()
+                    )
+
+                    viewModel.saveOrderProductInFirebase(order) // save this order in firebase
+
+                    // reset itemCount & minus stock in firebase for particular item after order,
+                    for (product in cartProductsList) {
+                        val count = product.productCount ?: 0
+                        val stock = product.productStock?.minus(count)
+                        if (stock != null)
+                            viewModel.saveProductAfterOrder(product, stock)
+
+                    }
+
+                }
+            }
+
+        }
+    }
 
     private fun onOrderPlaceClicked() {
         binding.btnOrderNext.setOnClickListener {

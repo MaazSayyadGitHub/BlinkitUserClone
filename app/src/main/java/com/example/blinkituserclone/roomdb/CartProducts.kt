@@ -18,4 +18,5 @@ data class CartProducts(
     val productImage : String ? = null,
     val productCategory : String ? = null,
     val adminUid : String ? = null,
-)
+    val productType : String? = null
+    )

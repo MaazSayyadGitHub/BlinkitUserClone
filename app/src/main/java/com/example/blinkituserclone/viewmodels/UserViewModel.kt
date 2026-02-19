@@ -8,6 +8,8 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.example.blinkituserclone.Utils
+import com.example.blinkituserclone.models.OrderedItems
+import com.example.blinkituserclone.models.Orders
 import com.example.blinkituserclone.models.Product
 import com.example.blinkituserclone.models.Users
 import com.example.blinkituserclone.roomdb.CartProductDatabase
@@ -58,14 +60,31 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun updateItemCount(product: Product, itemCount: Int) {
+    fun deleteAllCartProducts() {
+        viewModelScope.launch(Dispatchers.IO) {
+            cartProductDao.deleteAllCartProducts()
+        }
+    }
 
+    fun updateItemCount(product: Product, itemCount: Int) {
         FirebaseDatabase.getInstance().getReference("Admin").child("AllProducts/${product.productRandomId}").child("itemCount").setValue(itemCount)
         FirebaseDatabase.getInstance().getReference("Admin").child("ProductCategory/${product.productCategory}/${product.productRandomId}").child("itemCount").setValue(itemCount)
         FirebaseDatabase.getInstance().getReference("Admin").child("ProductType/${product.productType}/${product.productRandomId}").child("itemCount").setValue(itemCount)
 
         Log.d("UPDATE : ", "RandomID = "+product.productRandomId.toString() +" -- itemCount = "+itemCount.toString())
     }
+
+    // update item Count to 0 & stock - itemCount
+    fun saveProductAfterOrder(product : CartProducts, stock : Int){
+        FirebaseDatabase.getInstance().getReference("Admin").child("AllProducts/${product.productId}").child("itemCount").setValue(0)
+        FirebaseDatabase.getInstance().getReference("Admin").child("ProductCategory/${product.productCategory}/${product.productId}").child("itemCount").setValue(0)
+        FirebaseDatabase.getInstance().getReference("Admin").child("ProductType/${product.productType}/${product.productId}").child("itemCount").setValue(0)
+
+        FirebaseDatabase.getInstance().getReference("Admin").child("AllProducts/${product.productId}").child("productStock").setValue(stock)
+        FirebaseDatabase.getInstance().getReference("Admin").child("ProductCategory/${product.productCategory}/${product.productId}").child("productStock").setValue(stock)
+        FirebaseDatabase.getInstance().getReference("Admin").child("ProductType/${product.productType}/${product.productId}").child("productStock").setValue(stock)
+    }
+
 
     fun fetchAllProductsFromDB(): Flow<List<Product>> = callbackFlow {
         val db = FirebaseDatabase.getInstance().getReference("Admin").child("AllProducts")
@@ -89,6 +108,54 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
 
         db.addValueEventListener(eventListener)
         awaitClose { db.removeEventListener(eventListener) } // as done event then close/remove it
+    }
+
+    fun getAllOrders() : Flow<List<Orders>> = callbackFlow {
+        val db = FirebaseDatabase.getInstance().getReference("Admin").child("Orders").orderByChild("orderStatus")
+
+        val eventListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val listOfOrder = ArrayList<Orders>()
+                for (orders in snapshot.children){
+                    val order = orders.getValue(Orders::class.java) ?: Orders()
+                    if (order.orderingUserId == Utils.getUserID()){
+                        listOfOrder.add(order)
+                    }
+                }
+
+                trySend(listOfOrder)
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                TODO("Not yet implemented")
+            }
+
+        }
+        db.addValueEventListener(eventListener)
+        awaitClose { db.removeEventListener(eventListener) }
+    }
+
+    fun getAllOrdersById(orderId : String) : Flow<List<CartProducts>> = callbackFlow {
+        val db = FirebaseDatabase.getInstance().getReference("Admin").child("Orders").child(orderId)
+
+        val eventListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+
+                // we are doing this without for loop because there will be just single entry (which we have passed - orderId)
+                val order = snapshot.getValue(Orders::class.java)
+                // here orderList will be send/return from that order
+                    trySend(order?.orderList ?: emptyList()) // if order/orderList null then we will send emptyList
+
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                TODO("Not yet implemented")
+            }
+
+        }
+
+        db.addValueEventListener(eventListener)
+        awaitClose { db.removeEventListener(eventListener) }
     }
 
     // categoryName passing
@@ -146,4 +213,39 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
             .child(Utils.getUserID().toString())
             .setValue(user)
     }
+
+    fun getUserAddressFromFirebase(callback : (String?) -> Unit) {
+        val db = FirebaseDatabase.getInstance().getReference("All Users")
+            .child("Users")
+            .child(Utils.getUserID().toString())
+
+        db.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (snapshot.exists()) {
+                    val address = snapshot.getValue(Users::class.java)
+                    callback(address?.userAddress)
+                } else {
+                    callback(null)
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                callback(null)
+            }
+        })
+    }
+
+    fun saveOrderProductInFirebase(order : Orders) {
+        FirebaseDatabase.getInstance().getReference("Admin")
+            .child("Orders")
+            .child(order.orderId.toString())
+            .setValue(order)
+            .addOnSuccessListener {
+                println("address success")
+            }
+            .addOnFailureListener {
+                println("address failed")
+            }
+    }
+
 }
