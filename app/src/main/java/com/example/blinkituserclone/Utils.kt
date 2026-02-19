@@ -6,6 +6,9 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import com.example.blinkituserclone.databinding.ProgressDialogBinding
 import com.google.firebase.auth.FirebaseAuth
+import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 object Utils {
 
@@ -41,4 +44,15 @@ object Utils {
     fun getUserID() : String? {
         return FirebaseAuth.getInstance().currentUser?.uid
     }
+
+    fun getRandomUUID() : String {
+        return (1..25).map { (('A'..'Z') + ('a'..'z') + ('0'..'9')).random() }.joinToString("")
+    }
+
+    fun getCurrentDate() : String {
+        val currentDate = LocalDate.now()
+        val simpleDateFormat = DateTimeFormatter.ofPattern("dd-MM-yyyy")
+        return currentDate.format(simpleDateFormat)
+    }
+
 }

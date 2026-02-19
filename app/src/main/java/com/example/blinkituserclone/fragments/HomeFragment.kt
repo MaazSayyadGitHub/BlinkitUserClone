@@ -23,7 +23,6 @@ import kotlin.math.log
 class HomeFragment : Fragment() {
 
     val viewModel : UserViewModel by viewModels()
-
     private lateinit var binding : FragmentHomeBinding
 
     override fun onCreateView(
@@ -37,8 +36,15 @@ class HomeFragment : Fragment() {
         navigateToSearchFragment()
 
         getAllProductsFromRoomDB()
+        onProfileClicked()
 
         return binding.root
+    }
+
+    private fun onProfileClicked() {
+        binding.ivProfile.setOnClickListener {
+            findNavController().navigate(R.id.action_homeFragment_to_profileFragment)
+        }
     }
 
     private fun getAllProductsFromRoomDB() {

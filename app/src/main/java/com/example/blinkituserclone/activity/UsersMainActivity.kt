@@ -111,4 +111,9 @@ class UsersMainActivity : AppCompatActivity() , CartListener {
         }
 
     }
+
+    override fun hideCartLayout() {
+        binding.llCart.visibility = View.GONE
+        binding.tvNumberOfProductCount.text = "0"
+    }
 }
