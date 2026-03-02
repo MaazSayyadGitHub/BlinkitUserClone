@@ -7,8 +7,12 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import com.example.blinkituserclone.Notification.AccessToken
+import com.example.blinkituserclone.Notification.api.ApiUtilities
+import com.example.blinkituserclone.Notification.api.models.FCMRequest
+import com.example.blinkituserclone.Notification.api.models.Message
+import com.example.blinkituserclone.Notification.api.models.NotificationBody
 import com.example.blinkituserclone.Utils
-import com.example.blinkituserclone.models.OrderedItems
 import com.example.blinkituserclone.models.Orders
 import com.example.blinkituserclone.models.Product
 import com.example.blinkituserclone.models.Users
@@ -23,6 +27,8 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 
 class UserViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -246,6 +252,65 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
             .addOnFailureListener {
                 println("address failed")
             }
+    }
+
+    suspend fun sendNotification(adminUid: String, title: String, message: String) {
+
+        withContext(Dispatchers.IO){
+            try {
+                // get admin token here
+                val adminTokenSnapshot = FirebaseDatabase.getInstance()
+                    .getReference("Admin/AdminInfo/$adminUid/adminToken")
+                    .get()
+                    .await() // wait till get token
+
+                val adminToken = adminTokenSnapshot.getValue(String::class.java)
+
+                if (adminToken.isNullOrEmpty()){
+                    Log.e("FCM", "Admin token not found")
+                    return@withContext
+                }
+
+                Log.d("FCM", "Admin Token: $adminToken")
+
+                // Get Access Token
+                val accessToken = AccessToken.getAccessToken()
+
+                if (accessToken == null) {
+                    Log.e("FCM", "Failed to get access token")
+                    return@withContext
+                }
+
+                Log.d("FCM", "Access Token: ${accessToken.substring(0, 20)}...")
+
+                // Build Request (HTTP v1 Format)
+                val fcmRequest = FCMRequest(
+                    message = Message(
+                        token = adminToken,
+                        notification = NotificationBody(
+                            title = title,
+                            body = message
+                        )
+                    )
+                )
+
+                Log.d("FCM", "Sending: $fcmRequest")
+
+                val response = ApiUtilities.notificationApi.sendNotification(
+                    bearerToken = "Bearer $accessToken",
+                    request = fcmRequest
+                )
+
+                Log.d("FCM", "Success: ${response.name}")
+
+
+            } catch (e : Exception) {
+                Log.e("FCM", "Exception", e)
+            }
+        }
+
+
+
     }
 
 }

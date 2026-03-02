@@ -24,11 +24,16 @@ import com.example.blinkituserclone.models.Orders
 import com.example.blinkituserclone.models.Product
 import com.example.blinkituserclone.models.Users
 import com.example.blinkituserclone.viewmodels.UserViewModel
+import com.google.firebase.Firebase
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.messaging.FirebaseMessaging
 import com.razorpay.Checkout
 import com.razorpay.PaymentData
 import com.razorpay.PaymentResultWithDataListener
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.nio.charset.Charset
 
@@ -38,6 +43,7 @@ class OrderPlaceActivity : AppCompatActivity() , PaymentResultWithDataListener {
     private val viewModel: UserViewModel by viewModels()
     private lateinit var adapterCartProducts : AdapterCartProducts
     val cartListener : CartListener ? = null
+    var userToken : String ? = null
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -141,6 +147,10 @@ class OrderPlaceActivity : AppCompatActivity() , PaymentResultWithDataListener {
 
                     viewModel.saveOrderProductInFirebase(order) // save this order in firebase
 
+                    lifecycleScope.launch {
+                        viewModel.sendNotification(cartProductsList[0].adminUid!!, "Ordered", "Some Products Has Been Ordered!")
+                    }
+
                     // reset itemCount & minus stock in firebase for particular item after order,
                     for (product in cartProductsList) {
                         val count = product.productCount ?: 0
@@ -155,6 +165,16 @@ class OrderPlaceActivity : AppCompatActivity() , PaymentResultWithDataListener {
 
         }
     }
+
+//    fun saveToken() {
+//        FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+//            if (token.isNotEmpty()){
+//                FirebaseDatabase.getInstance().getReference(Utils.getUserID())
+//                    .child("")
+//                    .setValue(token)
+//            }
+//        }
+//    }
 
     private fun onOrderPlaceClicked() {
         binding.btnOrderNext.setOnClickListener {
@@ -193,16 +213,28 @@ class OrderPlaceActivity : AppCompatActivity() , PaymentResultWithDataListener {
 
         val fullAddress = "$pinCode, $district($state), $address, $phoneNo" // make one line address
 
-        val user = Users(
-            uid = Utils.getUserID(),
-            userPhoneNumber = phoneNo,
-            userAddress = fullAddress
-        )
+        // get user token here
+        val userUid = Utils.getUserID()
+        lifecycleScope.launch {
+            val userTokenSnapshot = FirebaseDatabase.getInstance()
+                .getReference("All Users/Users/$userUid/userToken")
+                .get()
+                .await() // wait till get token
 
-        // do this work in coroutine background
-        lifecycleScope.launch(Dispatchers.IO) {
-            viewModel.saveUserAddressInFirebase(user) // save in FireBase
-            viewModel.saveAddressStatusInSharedPref()
+            userToken = userTokenSnapshot.getValue(String::class.java)
+
+            val user = Users(
+                uid = userUid,
+                userPhoneNumber = phoneNo,
+                userAddress = fullAddress,
+                userToken = userToken
+            )
+
+            // do this work in coroutine background
+            withContext(Dispatchers.IO) {
+                viewModel.saveUserAddressInFirebase(user) // save in FireBase
+                viewModel.saveAddressStatusInSharedPref()
+            }
         }
 
         Utils.showToast(this, "Saved Address Successfully")

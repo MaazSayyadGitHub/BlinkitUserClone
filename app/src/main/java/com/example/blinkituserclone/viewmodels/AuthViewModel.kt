@@ -10,6 +10,7 @@ import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthOptions
 import com.google.firebase.auth.PhoneAuthProvider
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.flow.MutableStateFlow
 import java.util.concurrent.TimeUnit
 
@@ -67,25 +68,36 @@ class AuthViewModel : ViewModel() {
         // here passing otp to cross check in auth and give us response success or error
         val credential = PhoneAuthProvider.getCredential(_verificationID.value.toString(), otp)
 
-        Utils.getFirebaseAuthInstance().signInWithCredential(credential)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-
-                    val firebaseUser = task.result?.user
-                    val uid = firebaseUser?.uid ?: return@addOnCompleteListener
-
-                    user.uid = uid   // set UID to your user object
-
-                    // if success then we will add user details to firebase DB
-                    FirebaseDatabase.getInstance().getReference("All Users")
-                        .child("Users")
-                        .child(user.uid!!)
-                        .setValue(user)
-
-                    _isSignedInSuccessfully.value = true
-                } else {
-                    _isSignedInSuccessfully.value = false
-                }
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (task.isSuccessful){
+                val token = task.result
+                user.userToken = token
+            } else {
+                Log.d("FCM ISSUE", "FCM Token Fetching Issue", task.exception)
             }
+
+            Utils.getFirebaseAuthInstance().signInWithCredential(credential)
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+
+                        val firebaseUser = task.result?.user
+                        val uid = firebaseUser?.uid ?: return@addOnCompleteListener
+
+                        user.uid = uid   // set UID to your user object
+
+                        // if success then we will add user details to firebase DB
+                        FirebaseDatabase.getInstance().getReference("All Users")
+                            .child("Users")
+                            .child(user.uid!!)
+                            .setValue(user)
+
+                        _isSignedInSuccessfully.value = true
+                    } else {
+                        _isSignedInSuccessfully.value = false
+                    }
+                }
+        }
+
+
     }
 }
