@@ -39,6 +39,10 @@ android {
     buildFeatures {
         viewBinding = true
     }
+
+    packagingOptions {
+        exclude("META-INF/DEPENDENCIES")
+    }
 }
 
 dependencies {
@@ -69,14 +73,22 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth-ktx:22.3.1")
+    // for FCM
+    implementation("com.google.firebase:firebase-messaging-ktx:23.4.1")
+
+    // Retrofit
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    // Converter for JSON serialization/deserialization (using Gson here)
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
+    implementation("com.google.auth:google-auth-library-oauth2-http:1.19.0") // google OAuth2
+
     // phone otp
     implementation("com.google.android.gms:play-services-auth-api-phone:18.0.1")
     implementation("com.google.android.gms:play-services-auth:21.2.0")
     // database and storage
     implementation("com.google.firebase:firebase-storage-ktx:20.3.0")
     implementation("com.google.firebase:firebase-database-ktx:20.3.0")
-    // for FCM
-    implementation("com.google.firebase:firebase-messaging-ktx:23.4.1")
 
     // shimmer Effect
     implementation("com.facebook.shimmer:shimmer:0.5.0@aar")
